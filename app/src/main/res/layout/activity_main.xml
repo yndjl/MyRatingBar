@@ -8,21 +8,13 @@
     android:orientation="vertical"
     tools:context="com.mgl.myratingbar.sample.MainActivity">
 
-    <com.mgl.myratingbar.library.CustomRatingBarXML
+    <com.mgl.myratingbar.library.CustomRatingBar
+        android:background="#0000ff"
+        android:layout_marginTop="40dp"
         android:id="@+id/crb_activity_base_sercive_record_evaluationRatingBar"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="20dp"
-        custom:clickable="true"
-        custom:initSelectValue="2.5"
-        custom:starCount="5"
-        custom:starEmpty="@drawable/star3"
-        custom:starFull="@drawable/star1"
-        custom:starHalf="@drawable/star2"
-        custom:starImageSize="35"
-        custom:starMargin="5"
-        custom:stepWay="Half"
-        custom:valueOfEveryStar="2" />
+        android:layout_gravity="center_horizontal"
+        android:layout_height="wrap_content" />
 
     <TextView
         android:layout_width="wrap_content"

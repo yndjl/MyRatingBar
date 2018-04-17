@@ -4,27 +4,32 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * Created by Administrator on 2018/4/12.
  */
 
-public class CustomRatingBarXML extends LinearLayout {
+public class CustomRatingBar extends LinearLayout {
+    public static final int STEP_FULL = 1;
+    public static final int STEP_HALF = 0;
     //    尺寸值
     private int starImageSize;
     //    星星间距
     private int starMargin;
     //    星星总数
-    private int starCount;
+    public int starCount;
     //    空白的星星资源文件值
     private int starEmpty;
     //    满星资源文件值
@@ -33,6 +38,8 @@ public class CustomRatingBarXML extends LinearLayout {
     private int starHalf;
     //    是否可点击boolean值
     private boolean clickable;
+    //    是否可拖拽boolean值
+    private boolean dragable;
     //    当前进度float值--星数
     private float initSelectValue;
     //    每次进度方式的值，整星还是半星
@@ -40,14 +47,13 @@ public class CustomRatingBarXML extends LinearLayout {
     //    每颗星的分值
     private float valueOfEveryStar;
 
-
     private List<StarRecord> starImageViewList = new ArrayList<>();
 
-    public CustomRatingBarXML(Context context) {
+    public CustomRatingBar(Context context) {
         super(context);
     }
 
-    public CustomRatingBarXML(Context context, @Nullable AttributeSet attrs) {
+    public CustomRatingBar(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.CustomRatingBarStyle);
 
@@ -58,6 +64,7 @@ public class CustomRatingBarXML extends LinearLayout {
         starFull = typedArray.getResourceId(R.styleable.CustomRatingBarStyle_starFull, R.drawable.star1);
         starHalf = typedArray.getResourceId(R.styleable.CustomRatingBarStyle_starHalf, R.drawable.star2);
         clickable = typedArray.getBoolean(R.styleable.CustomRatingBarStyle_clickable, true);
+        dragable = typedArray.getBoolean(R.styleable.CustomRatingBarStyle_dragable, true);
         initSelectValue = typedArray.getFloat(R.styleable.CustomRatingBarStyle_initSelectValue, 0);
         if (initSelectValue > starCount)
             initSelectValue = starCount;
@@ -65,10 +72,174 @@ public class CustomRatingBarXML extends LinearLayout {
         valueOfEveryStar = typedArray.getFloat(R.styleable.CustomRatingBarStyle_valueOfEveryStar, 1);
 
         typedArray.recycle();
+        initData(context);
+    }
 
+    public void invalidateView(Context context, Builder builder) {
+        starImageSize = builder.starImageSize;
+        starMargin = builder.starMargin;
+        starCount = builder.starCount;
+        starEmpty = builder.starEmpty;
+        starFull = builder.starFull;
+        starHalf = builder.starHalf;
+        clickable = builder.clickable;
+        dragable = builder.dragable;
+        initSelectValue = builder.initSelectValue;
+        stepWay = builder.stepWay;
+        valueOfEveryStar = builder.valueOfEveryStar;
+        removeAllViews();
+        starImageViewList.clear();
+        initData(context);
+//        invalidate();
+    }
+
+    public class Builder {
+        private Context context;
+        //    尺寸值
+        private int starImageSize;
+        //    星星间距
+        private int starMargin;
+        //    星星总数
+        public int starCount;
+        //    空白的星星资源文件值
+        private int starEmpty;
+        //    满星资源文件值
+        private int starFull;
+        //    半星资源文件值
+        private int starHalf;
+        //    是否可点击boolean值
+        private boolean clickable;
+        //    是否可拖拽boolean值
+        private boolean dragable;
+        //    当前进度float值--星数
+        private float initSelectValue;
+        //    每次进度方式的值，整星还是半星
+        private int stepWay;
+        //    每颗星的分值
+        private float valueOfEveryStar;
+
+        public Builder(Context context) {
+            //可以设置必填条件的选项此处
+            this.context = context;
+
+            //    尺寸值
+            starImageSize = (int) dp2px(20f, context);
+            //    星星间距
+            starMargin = (int) dp2px(5f, context);
+            //    星星总数
+            starCount = 5;
+            //    空白的星星资源文件值
+            starEmpty = R.drawable.star3;
+            //    满星资源文件值
+            starFull = R.drawable.star1;
+            //    半星资源文件值
+            starHalf = R.drawable.star2;
+            //    是否可点击boolean值
+            clickable = true;
+            //    是否可拖拽boolean值
+            dragable = true;
+            //    当前进度float值--星数
+            initSelectValue = 0;
+            //    每次进度方式的值，整星还是半星
+            stepWay = 1;
+            //    每颗星的分值
+            valueOfEveryStar = 1;
+        }
+
+        //    尺寸值
+        public Builder starImageSize(int starImageSize) {
+            this.starImageSize = (int) dp2px(starImageSize, context);
+            return this;
+        }
+
+        //    星星间距
+        public Builder starMargin(int starMargin) {
+            this.starMargin = (int) dp2px(starMargin, context);
+            return this;
+        }
+
+        //    星星总数
+        public Builder starCount(int starCount) {
+            this.starCount = starCount;
+            return this;
+        }
+
+        //    空白的星星资源文件值
+        public Builder starEmpty(int starEmpty) {
+            this.starEmpty = starEmpty;
+            return this;
+        }
+
+        //    满星资源文件值
+        public Builder starFull(int starFull) {
+            this.starFull = starFull;
+            return this;
+        }
+
+        //    半星资源文件值
+        public Builder starHalf(int starHalf) {
+            this.starHalf = starHalf;
+            return this;
+        }
+
+        //    是否可点击boolean值
+        public Builder clickable(boolean clickable) {
+            this.clickable = clickable;
+            return this;
+        }
+
+        //    是否可拖拽boolean值
+        public Builder dragable(boolean dragable) {
+            this.dragable = dragable;
+            return this;
+        }
+
+        //    当前进度float值--星数
+        public Builder initSelectValue(float initSelectValue) {
+            this.initSelectValue = initSelectValue;
+            return this;
+        }
+
+        //    每次进度方式的值，整星还是半星
+        public Builder stepWay(int stepWay) {
+            this.stepWay = stepWay;
+            return this;
+        }
+
+        //    每颗星的分值
+        public Builder valueOfEveryStar(float valueOfEveryStar) {
+            this.valueOfEveryStar = valueOfEveryStar;
+            return this;
+        }
+
+        public void build() {
+            Log.d("Builder", this.toString());
+            invalidateView(context, this);
+        }
+
+        @Override
+        public String toString() {
+            return "Builder{" +
+                    "context=" + context +
+                    ", starImageSize=" + starImageSize +
+                    ", starMargin=" + starMargin +
+                    ", starCount=" + starCount +
+                    ", starEmpty=" + starEmpty +
+                    ", starFull=" + starFull +
+                    ", starHalf=" + starHalf +
+                    ", clickable=" + clickable +
+                    ", initSelectValue=" + initSelectValue +
+                    ", stepWay=" + stepWay +
+                    ", valueOfEveryStar=" + valueOfEveryStar +
+                    '}';
+        }
+    }
+
+
+    private void initData(Context context) {
         for (int i = 0; i < starCount; i++) {
             ImageView imageView = new ImageView(context);
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(starImageSize, starImageSize);
+            LayoutParams layoutParams = new LayoutParams(starImageSize, starImageSize);
             if (i != 0)
                 layoutParams.setMargins(starMargin, 0, 0, 0);
             imageView.setLayoutParams(layoutParams);
@@ -105,9 +276,14 @@ public class CustomRatingBarXML extends LinearLayout {
         setOnListener();
     }
 
+    /**
+     * 设置点击、滑动监听事件
+     */
     private void setOnListener() {
-        setOnClickListener();
-        setOnTouchListener();
+        if (clickable)
+            setOnClickListener();
+        if (dragable)
+            setOnTouchListener();
     }
 
     public float showingStarPosition = 0;//记录星星到空间最左端的距离（从0开始；-1表示全部Empty）
@@ -144,8 +320,10 @@ public class CustomRatingBarXML extends LinearLayout {
 
                 if (Math.abs(touchDownX - event.getX()) >= ViewConfiguration.get(getContext()).getScaledTouchSlop()) {
                     mScrolling = true;
+                    System.out.println("onInterceptTouchEvent ACTION_MOVE    " + true);
                 } else {
                     mScrolling = false;
+                    System.out.println("onInterceptTouchEvent ACTION_MOVE    " + false);
                 }
 
                 break;
@@ -166,9 +344,7 @@ public class CustomRatingBarXML extends LinearLayout {
 
 
     private void setOnTouchListener() {
-        View rootView = getRootView();
-
-        rootView.setOnTouchListener(new OnTouchListener() {
+        this.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
@@ -176,15 +352,26 @@ public class CustomRatingBarXML extends LinearLayout {
                         showingStarPosition = event.getX();
                         double num = Math.floor(showingStarPosition / (starMargin + starImageSize));
                         float yuShu = showingStarPosition % (starMargin + starImageSize);
-                        if (showingStarPosition <= 0) {//rootview左侧
+                        if (showingStarPosition <= 0 && event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview左侧
                             for (int i = 0; i < starImageViewList.size(); i++) {
                                 starImageViewList.get(i).getImg().setImageResource(starEmpty);
                                 starImageViewList.get(i).setStarStyle(EMPTY);
                             }
-                        } else if (showingStarPosition > 0 && showingStarPosition > (starImageViewList.size() * (starImageSize + starMargin) - starMargin)) {//rootview右侧
-                        } else {//rootview中间
+                        } else if (showingStarPosition > 0 && showingStarPosition > (starImageViewList.size() * (starImageSize + starMargin) - starMargin)
+                                && event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview右侧
+                        } else if (event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview中间
                             if (stepWay == 1) {//满星方式
                                 if (yuShu < starImageSize) {
+                                    for (int i = 0; i < starImageViewList.size(); i++) {
+                                        if (i <= num) {
+                                            starImageViewList.get(i).getImg().setImageResource(starFull);
+                                            starImageViewList.get(i).setStarStyle(FULL);
+                                        } else {
+                                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
+                                            starImageViewList.get(i).setStarStyle(EMPTY);
+                                        }
+                                    }
+                                } else if (yuShu > starImageSize && yuShu < starImageSize + starMargin) {
                                     for (int i = 0; i < starImageViewList.size(); i++) {
                                         if (i <= num) {
                                             starImageViewList.get(i).getImg().setImageResource(starFull);
@@ -219,6 +406,16 @@ public class CustomRatingBarXML extends LinearLayout {
                                             starImageViewList.get(i).setStarStyle(EMPTY);
                                         }
                                     }
+                                } else if (starImageSize < yuShu && yuShu < starImageSize + starMargin) {//满星
+                                    for (int i = 0; i < starImageViewList.size(); i++) {
+                                        if (i <= num) {
+                                            starImageViewList.get(i).getImg().setImageResource(starFull);
+                                            starImageViewList.get(i).setStarStyle(FULL);
+                                        } else {
+                                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
+                                            starImageViewList.get(i).setStarStyle(EMPTY);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -231,53 +428,53 @@ public class CustomRatingBarXML extends LinearLayout {
     }
 
     private void setOnClickListener() {
-        if (clickable)
-            for (int i = 0; i < starImageViewList.size(); i++) {
-                final int m = i;
-                starImageViewList.get(i).getImg().setOnClickListener(new OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        for (int j = 0; j < starImageViewList.size(); j++) {
-                            if (j < m) {//选择该star前的star变化
-                                starImageViewList.get(j).getImg().setImageResource(starFull);
-                                starImageViewList.get(j).setStarStyle(FULL);
-                            } else if (j == m) {//选择该star的star变化
-                                if (stepWay == 1) {//满星方式
-                                    if (starImageViewList.get(j).getStarStyle() == EMPTY) {
-                                        starImageViewList.get(j).getImg().setImageResource(starFull);
-                                        starImageViewList.get(j).setStarStyle(FULL);
-                                    } else if (starImageViewList.get(j).getStarStyle() == FULL) {
-                                        if (m < starImageViewList.size() - 1 && starImageViewList.size() > 1 && starImageViewList.get(j + 1).getStarStyle() == FULL)//去除多星变少星时，点击的该星变黑                                            ;
-                                            ;
-                                        else {
-                                            starImageViewList.get(j).getImg().setImageResource(starEmpty);
-                                            starImageViewList.get(j).setStarStyle(EMPTY);
-                                        }
-                                    }
-                                } else if (stepWay == 0) {//半星方式
-                                    if (starImageViewList.get(j).getStarStyle() == FULL) {
-                                        if (m < starImageViewList.size() - 1 && starImageViewList.size() > 1 && starImageViewList.get(j + 1).getStarStyle() == FULL)//去除问题：多星变少星时，点击的该星变黑                                            ;
-                                            ;
-                                        else {
-                                            starImageViewList.get(j).getImg().setImageResource(starHalf);
-                                            starImageViewList.get(j).setStarStyle(HALF);
-                                        }
-                                    } else if (starImageViewList.get(j).getStarStyle() == HALF) {
+
+        for (int i = 0; i < starImageViewList.size(); i++) {
+            final int m = i;
+            starImageViewList.get(i).getImg().setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    for (int j = 0; j < starImageViewList.size(); j++) {
+                        if (j < m) {//选择该star前的star变化
+                            starImageViewList.get(j).getImg().setImageResource(starFull);
+                            starImageViewList.get(j).setStarStyle(FULL);
+                        } else if (j == m) {//选择该star的star变化
+                            if (stepWay == 1) {//满星方式
+                                if (starImageViewList.get(j).getStarStyle() == EMPTY) {
+                                    starImageViewList.get(j).getImg().setImageResource(starFull);
+                                    starImageViewList.get(j).setStarStyle(FULL);
+                                } else if (starImageViewList.get(j).getStarStyle() == FULL) {
+                                    if (m < starImageViewList.size() - 1 && starImageViewList.size() > 1 && starImageViewList.get(j + 1).getStarStyle() == FULL)//去除多星变少星时，点击的该星变黑                                            ;
+                                        ;
+                                    else {
                                         starImageViewList.get(j).getImg().setImageResource(starEmpty);
                                         starImageViewList.get(j).setStarStyle(EMPTY);
-                                    } else if (starImageViewList.get(j).getStarStyle() == EMPTY) {
-                                        starImageViewList.get(j).getImg().setImageResource(starFull);
-                                        starImageViewList.get(j).setStarStyle(FULL);
                                     }
                                 }
-                            } else {//选择该star后的star变化
-                                starImageViewList.get(j).getImg().setImageResource(starEmpty);
-                                starImageViewList.get(j).setStarStyle(EMPTY);
+                            } else if (stepWay == 0) {//半星方式
+                                if (starImageViewList.get(j).getStarStyle() == FULL) {
+                                    if (m < starImageViewList.size() - 1 && starImageViewList.size() > 1 && starImageViewList.get(j + 1).getStarStyle() == FULL)//去除问题：多星变少星时，点击的该星变黑                                            ;
+                                        ;
+                                    else {
+                                        starImageViewList.get(j).getImg().setImageResource(starHalf);
+                                        starImageViewList.get(j).setStarStyle(HALF);
+                                    }
+                                } else if (starImageViewList.get(j).getStarStyle() == HALF) {
+                                    starImageViewList.get(j).getImg().setImageResource(starEmpty);
+                                    starImageViewList.get(j).setStarStyle(EMPTY);
+                                } else if (starImageViewList.get(j).getStarStyle() == EMPTY) {
+                                    starImageViewList.get(j).getImg().setImageResource(starFull);
+                                    starImageViewList.get(j).setStarStyle(FULL);
+                                }
                             }
+                        } else {//选择该star后的star变化
+                            starImageViewList.get(j).getImg().setImageResource(starEmpty);
+                            starImageViewList.get(j).setStarStyle(EMPTY);
                         }
                     }
-                });
-            }
+                }
+            });
+        }
     }
 
     /**
