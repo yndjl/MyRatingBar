@@ -87,10 +87,11 @@ public class CustomRatingBar extends LinearLayout {
         initSelectValue = builder.initSelectValue;
         stepWay = builder.stepWay;
         valueOfEveryStar = builder.valueOfEveryStar;
+        if (initSelectValue > starCount)
+            initSelectValue = starCount;
         removeAllViews();
         starImageViewList.clear();
         initData(context);
-//        invalidate();
     }
 
     public class Builder {
