@@ -12,6 +12,7 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -283,8 +284,7 @@ public class CustomRatingBar extends LinearLayout {
     private void setOnListener() {
         if (clickable)
             setOnClickListener();
-        if (dragable)
-            setOnTouchListener();
+        setOnTouchListener(dragable);
     }
 
     public float showingStarPosition = 0;//记录星星到空间最左端的距离（从0开始；-1表示全部Empty）
@@ -344,83 +344,14 @@ public class CustomRatingBar extends LinearLayout {
     VelocityTracker velocityTracker = VelocityTracker.obtain();
 
 
-    private void setOnTouchListener() {
+    private void setOnTouchListener(final boolean dragable) {
         this.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_MOVE:
-                        showingStarPosition = event.getX();
-                        double num = Math.floor(showingStarPosition / (starMargin + starImageSize));
-                        float yuShu = showingStarPosition % (starMargin + starImageSize);
-                        if (showingStarPosition <= 0 && event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview左侧
-                            for (int i = 0; i < starImageViewList.size(); i++) {
-                                starImageViewList.get(i).getImg().setImageResource(starEmpty);
-                                starImageViewList.get(i).setStarStyle(EMPTY);
-                            }
-                        } else if (showingStarPosition > 0 && showingStarPosition > (starImageViewList.size() * (starImageSize + starMargin) - starMargin)
-                                && event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview右侧
-                        } else if (event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview中间
-                            if (stepWay == 1) {//满星方式
-                                if (yuShu < starImageSize) {
-                                    for (int i = 0; i < starImageViewList.size(); i++) {
-                                        if (i <= num) {
-                                            starImageViewList.get(i).getImg().setImageResource(starFull);
-                                            starImageViewList.get(i).setStarStyle(FULL);
-                                        } else {
-                                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
-                                            starImageViewList.get(i).setStarStyle(EMPTY);
-                                        }
-                                    }
-                                } else if (yuShu > starImageSize && yuShu < starImageSize + starMargin) {
-                                    for (int i = 0; i < starImageViewList.size(); i++) {
-                                        if (i <= num) {
-                                            starImageViewList.get(i).getImg().setImageResource(starFull);
-                                            starImageViewList.get(i).setStarStyle(FULL);
-                                        } else {
-                                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
-                                            starImageViewList.get(i).setStarStyle(EMPTY);
-                                        }
-                                    }
-                                }
-                            } else if (stepWay == 0) {//半星方式
-                                if (starImageSize / 2 < yuShu && yuShu < starImageSize) {//满星
-                                    for (int i = 0; i < starImageViewList.size(); i++) {
-                                        if (i <= num) {
-                                            starImageViewList.get(i).getImg().setImageResource(starFull);
-                                            starImageViewList.get(i).setStarStyle(FULL);
-                                        } else {
-                                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
-                                            starImageViewList.get(i).setStarStyle(EMPTY);
-                                        }
-                                    }
-                                } else if (yuShu < starImageSize / 2) {
-                                    for (int i = 0; i < starImageViewList.size(); i++) {//半星
-                                        if (i < num) {
-                                            starImageViewList.get(i).getImg().setImageResource(starFull);
-                                            starImageViewList.get(i).setStarStyle(FULL);
-                                        } else if (i == num) {
-                                            starImageViewList.get(i).getImg().setImageResource(starHalf);
-                                            starImageViewList.get(i).setStarStyle(HALF);
-                                        } else {
-                                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
-                                            starImageViewList.get(i).setStarStyle(EMPTY);
-                                        }
-                                    }
-                                } else if (starImageSize < yuShu && yuShu < starImageSize + starMargin) {//满星
-                                    for (int i = 0; i < starImageViewList.size(); i++) {
-                                        if (i <= num) {
-                                            starImageViewList.get(i).getImg().setImageResource(starFull);
-                                            starImageViewList.get(i).setStarStyle(FULL);
-                                        } else {
-                                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
-                                            starImageViewList.get(i).setStarStyle(EMPTY);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
+                        if (dragable)
+                            dragStar(event);
                         break;
                 }
                 return true;
@@ -428,7 +359,82 @@ public class CustomRatingBar extends LinearLayout {
         });
     }
 
-    private void setOnClickListener() {
+
+    private void dragStar(MotionEvent event) {
+        showingStarPosition = event.getX();
+        double num = Math.floor(showingStarPosition / (starMargin + starImageSize));
+        float yuShu = showingStarPosition % (starMargin + starImageSize);
+        if (showingStarPosition <= 0 && event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview左侧
+            for (int i = 0; i < starImageViewList.size(); i++) {
+                starImageViewList.get(i).getImg().setImageResource(starEmpty);
+                starImageViewList.get(i).setStarStyle(EMPTY);
+            }
+        } else if (showingStarPosition > 0 && showingStarPosition > (starImageViewList.size() * (starImageSize + starMargin) - starMargin)
+                && event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview右侧
+        } else if (event.getY() >= 0 && event.getY() <= getMeasuredHeight()) {//rootview中间
+            if (stepWay == 1) {//满星方式
+                if (yuShu < starImageSize) {
+                    for (int i = 0; i < starImageViewList.size(); i++) {
+                        if (i <= num) {
+                            starImageViewList.get(i).getImg().setImageResource(starFull);
+                            starImageViewList.get(i).setStarStyle(FULL);
+                        } else {
+                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
+                            starImageViewList.get(i).setStarStyle(EMPTY);
+                        }
+                    }
+                } else if (yuShu > starImageSize && yuShu < starImageSize + starMargin) {
+                    for (int i = 0; i < starImageViewList.size(); i++) {
+                        if (i <= num) {
+                            starImageViewList.get(i).getImg().setImageResource(starFull);
+                            starImageViewList.get(i).setStarStyle(FULL);
+                        } else {
+                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
+                            starImageViewList.get(i).setStarStyle(EMPTY);
+                        }
+                    }
+                }
+            } else if (stepWay == 0) {//半星方式
+                if (starImageSize / 2 < yuShu && yuShu < starImageSize) {//满星
+                    for (int i = 0; i < starImageViewList.size(); i++) {
+                        if (i <= num) {
+                            starImageViewList.get(i).getImg().setImageResource(starFull);
+                            starImageViewList.get(i).setStarStyle(FULL);
+                        } else {
+                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
+                            starImageViewList.get(i).setStarStyle(EMPTY);
+                        }
+                    }
+                } else if (yuShu < starImageSize / 2) {
+                    for (int i = 0; i < starImageViewList.size(); i++) {//半星
+                        if (i < num) {
+                            starImageViewList.get(i).getImg().setImageResource(starFull);
+                            starImageViewList.get(i).setStarStyle(FULL);
+                        } else if (i == num) {
+                            starImageViewList.get(i).getImg().setImageResource(starHalf);
+                            starImageViewList.get(i).setStarStyle(HALF);
+                        } else {
+                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
+                            starImageViewList.get(i).setStarStyle(EMPTY);
+                        }
+                    }
+                } else if (starImageSize < yuShu && yuShu < starImageSize + starMargin) {//满星
+                    for (int i = 0; i < starImageViewList.size(); i++) {
+                        if (i <= num) {
+                            starImageViewList.get(i).getImg().setImageResource(starFull);
+                            starImageViewList.get(i).setStarStyle(FULL);
+                        } else {
+                            starImageViewList.get(i).getImg().setImageResource(starEmpty);
+                            starImageViewList.get(i).setStarStyle(EMPTY);
+                        }
+                    }
+                }
+            }
+        }
+        onRealTimeEvaluationScoreChangeListener.getRealTimeEvaluationScore(getEvaluationScore(),getEvaluationScore()/valueOfEveryStar);
+    }
+
+    public void setOnClickListener() {
 
         for (int i = 0; i < starImageViewList.size(); i++) {
             final int m = i;
@@ -473,6 +479,7 @@ public class CustomRatingBar extends LinearLayout {
                             starImageViewList.get(j).setStarStyle(EMPTY);
                         }
                     }
+                    onRealTimeEvaluationScoreChangeListener.getRealTimeEvaluationScore(getEvaluationScore(),getEvaluationScore()/valueOfEveryStar);
                 }
             });
         }
@@ -527,5 +534,15 @@ public class CustomRatingBar extends LinearLayout {
     public static float dp2px(float dpVal, Context context) {
         final float scale = context.getResources().getDisplayMetrics().density;
         return (dpVal * scale);
+    }
+
+    public interface OnRealTimeEvaluationScoreChangeListener {
+        void getRealTimeEvaluationScore(float score,float starNum);
+    }
+
+    public OnRealTimeEvaluationScoreChangeListener onRealTimeEvaluationScoreChangeListener;
+
+    public void setOnRealTimeEvaluationScoreChangeListener(OnRealTimeEvaluationScoreChangeListener onRealTimeEvaluationScoreChangeListener) {
+        this.onRealTimeEvaluationScoreChangeListener = onRealTimeEvaluationScoreChangeListener;
     }
 }
