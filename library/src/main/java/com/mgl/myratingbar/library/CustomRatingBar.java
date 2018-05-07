@@ -258,6 +258,9 @@ public class CustomRatingBar extends LinearLayout {
                 if (i < initSelectValue - 1) {
                     imageView.setImageResource(starFull);
                     starRecord.setStarStyle(FULL);
+                } else if (i == initSelectValue - 1) {
+                    imageView.setImageResource(starFull);
+                    starRecord.setStarStyle(FULL);
                 } else if (initSelectValue > i && i > initSelectValue - 1) {
                     imageView.setImageResource(starHalf);
                     starRecord.setStarStyle(HALF);
